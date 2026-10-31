@@ -1,0 +1,514 @@
++
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <title>Daily Expense Tracker</title>
+    <meta name="theme-color" content="#10b981">
+    <link rel="manifest" href="manifest.webmanifest">
+    <link rel="icon" href="icon.svg">
+    <link rel="apple-touch-icon" href="icon.svg">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+    <script>tailwind.config = { darkMode: 'media' }</script>
+    <style>
+        body {
+            padding-top: env(safe-area-inset-top);
+            padding-bottom: env(safe-area-inset-bottom);
+            background: linear-gradient(180deg, #d0e8f7 0%, #e8f4fd 30%, #f0f7fc 60%, #e0eef8 100%);
+            min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* City skyline silhouette at top */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 180px;
+            background:
+                /* Building 1 - tall left */
+                linear-gradient(to bottom, #5a9ec4 0%, #5a9ec4 100%) no-repeat 5% 100% / 28px 110px,
+                /* Building 2 */
+                linear-gradient(to bottom, #6aabcf 0%, #6aabcf 100%) no-repeat 9% 100% / 22px 80px,
+                /* Building 3 - skyscraper */
+                linear-gradient(to bottom, #4d8fb8 0%, #4d8fb8 100%) no-repeat 13% 100% / 18px 130px,
+                /* Building 4 */
+                linear-gradient(to bottom, #6aabcf 0%, #6aabcf 100%) no-repeat 16% 100% / 30px 70px,
+                /* Building 5 - tall */
+                linear-gradient(to bottom, #5a9ec4 0%, #5a9ec4 100%) no-repeat 21% 100% / 20px 100px,
+                /* Building 6 */
+                linear-gradient(to bottom, #78b8d8 0%, #78b8d8 100%) no-repeat 24% 100% / 26px 60px,
+                /* Building 7 */
+                linear-gradient(to bottom, #4d8fb8 0%, #4d8fb8 100%) no-repeat 28% 100% / 16px 90px,
+                /* Building 8 */
+                linear-gradient(to bottom, #6aabcf 0%, #6aabcf 100%) no-repeat 31% 100% / 24px 75px,
+                /* Building 9 - tallest center */
+                linear-gradient(to bottom, #4080a8 0%, #4080a8 100%) no-repeat 35% 100% / 22px 140px,
+                /* Building 10 */
+                linear-gradient(to bottom, #5a9ec4 0%, #5a9ec4 100%) no-repeat 39% 100% / 28px 85px,
+                /* Building 11 */
+                linear-gradient(to bottom, #78b8d8 0%, #78b8d8 100%) no-repeat 43% 100% / 20px 65px,
+                /* Building 12 */
+                linear-gradient(to bottom, #4d8fb8 0%, #4d8fb8 100%) no-repeat 47% 100% / 30px 105px,
+                /* Building 13 */
+                linear-gradient(to bottom, #6aabcf 0%, #6aabcf 100%) no-repeat 52% 100% / 18px 55px,
+                /* Building 14 */
+                linear-gradient(to bottom, #5a9ec4 0%, #5a9ec4 100%) no-repeat 55% 100% / 25px 95px,
+                /* Building 15 */
+                linear-gradient(to bottom, #78b8d8 0%, #78b8d8 100%) no-repeat 59% 100% / 22px 70px,
+                /* Building 16 - tall right */
+                linear-gradient(to bottom, #4d8fb8 0%, #4d8fb8 100%) no-repeat 63% 100% / 16px 120px,
+                /* Building 17 */
+                linear-gradient(to bottom, #6aabcf 0%, #6aabcf 100%) no-repeat 67% 100% / 28px 80px,
+                /* Building 18 */
+                linear-gradient(to bottom, #5a9ec4 0%, #5a9ec4 100%) no-repeat 71% 100% / 20px 60px,
+                /* Building 19 */
+                linear-gradient(to bottom, #4080a8 0%, #4080a8 100%) no-repeat 75% 100% / 24px 110px,
+                /* Building 20 */
+                linear-gradient(to bottom, #78b8d8 0%, #78b8d8 100%) no-repeat 79% 100% / 18px 50px,
+                /* Building 21 */
+                linear-gradient(to bottom, #5a9ec4 0%, #5a9ec4 100%) no-repeat 83% 100% / 26px 90px,
+                /* Building 22 */
+                linear-gradient(to bottom, #6aabcf 0%, #6aabcf 100%) no-repeat 87% 100% / 22px 70px,
+                /* Building 23 */
+                linear-gradient(to bottom, #4d8fb8 0%, #4d8fb8 100%) no-repeat 91% 100% / 20px 100px,
+                /* Building 24 */
+                linear-gradient(to bottom, #78b8d8 0%, #78b8d8 100%) no-repeat 95% 100% / 28px 60px;
+            z-index: 0;
+            pointer-events: none;
+            opacity: 0.35;
+        }
+
+        /* Cloud decorations */
+        body::after {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background:
+                /* Cloud 1 - top left */
+                radial-gradient(ellipse 80px 35px at 12% 8%, rgba(255,255,255,0.8) 0%, transparent 70%),
+                radial-gradient(ellipse 60px 30px at 15% 9%, rgba(255,255,255,0.7) 0%, transparent 70%),
+                radial-gradient(ellipse 50px 25px at 9% 9%, rgba(255,255,255,0.6) 0%, transparent 70%),
+                /* Cloud 2 - top right */
+                radial-gradient(ellipse 90px 35px at 82% 12%, rgba(255,255,255,0.8) 0%, transparent 70%),
+                radial-gradient(ellipse 70px 30px at 85% 11%, rgba(255,255,255,0.7) 0%, transparent 70%),
+                radial-gradient(ellipse 55px 28px at 79% 13%, rgba(255,255,255,0.6) 0%, transparent 70%),
+                /* Cloud 3 - middle */
+                radial-gradient(ellipse 100px 40px at 45% 25%, rgba(255,255,255,0.6) 0%, transparent 70%),
+                radial-gradient(ellipse 70px 35px at 48% 24%, rgba(255,255,255,0.5) 0%, transparent 70%),
+                /* Cloud 4 - bottom left */
+                radial-gradient(ellipse 120px 50px at 8% 88%, rgba(255,255,255,0.9) 0%, transparent 70%),
+                radial-gradient(ellipse 100px 45px at 15% 90%, rgba(255,255,255,0.8) 0%, transparent 70%),
+                radial-gradient(ellipse 80px 40px at 3% 89%, rgba(255,255,255,0.7) 0%, transparent 70%),
+                /* Cloud 5 - bottom right */
+                radial-gradient(ellipse 130px 55px at 90% 85%, rgba(255,255,255,0.9) 0%, transparent 70%),
+                radial-gradient(ellipse 100px 45px at 95% 87%, rgba(255,255,255,0.8) 0%, transparent 70%),
+                radial-gradient(ellipse 90px 40px at 85% 86%, rgba(255,255,255,0.7) 0%, transparent 70%),
+                /* Cloud 6 - bottom center */
+                radial-gradient(ellipse 110px 45px at 50% 92%, rgba(255,255,255,0.8) 0%, transparent 70%),
+                radial-gradient(ellipse 80px 35px at 55% 93%, rgba(255,255,255,0.7) 0%, transparent 70%),
+                /* Small accent clouds */
+                radial-gradient(ellipse 50px 22px at 30% 18%, rgba(255,255,255,0.5) 0%, transparent 70%),
+                radial-gradient(ellipse 45px 20px at 68% 22%, rgba(255,255,255,0.5) 0%, transparent 70%),
+                radial-gradient(ellipse 60px 25px at 25% 75%, rgba(255,255,255,0.6) 0%, transparent 70%),
+                radial-gradient(ellipse 55px 22px at 72% 70%, rgba(255,255,255,0.5) 0%, transparent 70%);
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        #app, nav {
+            position: relative;
+            z-index: 1;
+        }
+
+        input::-webkit-outer-spin-button,
+        input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        /* Override dark mode background to keep the sky theme */
+        @media (prefers-color-scheme: dark) {
+            body {
+                background: linear-gradient(180deg, #1a3a52 0%, #1e3d55 30%, #1a2e40 60%, #162535 100%);
+            }
+            body::before {
+                opacity: 0.25;
+            }
+            body::after {
+                opacity: 0.1;
+            }
+        }
+    </style>
+</head>
+
+<body class="text-slate-800 dark:text-slate-100 min-h-screen">
+    <div id="app" class="max-w-md mx-auto px-4 pb-24"></div>
+
+    <nav class="fixed bottom-0 inset-x-0 bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm border-t border-blue-100 dark:border-slate-700"
+        style="padding-bottom:env(safe-area-inset-bottom)">
+        <div class="max-w-md mx-auto grid grid-cols-2">
+            <button data-tab="track" class="tab py-3 text-sm font-medium">Track</button>
+            <button data-tab="history" class="tab py-3 text-sm font-medium">History</button>
+        </div>
+    </nav>
+
+    <script>
+        /* ============ Storage layer (swap this for Supabase if desired) ============ */
+        const Store = {
+            get(k, d) { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch { return d; } },
+            set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { alert('Storage failed: ' + e.message); } }
+        };
+        /* Keys: det:active = {month:'YYYY-MM', records:{ 'YYYY-MM-DD': record }}
+                 det:archive = { 'YYYY-MM': {month, income, expense, net, days, records:[...]} } */
+
+        /* ============ Helpers ============ */
+        const THB = n => '฿' + Number(n || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        const pad = n => String(n).padStart(2, '0');
+        const toISO = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+        const monthOf = iso => iso.slice(0, 7);
+        const monthLabel = ym => new Date(ym + '-01T00:00:00').toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
+        const dayLabel = iso => new Date(iso + 'T00:00:00').toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
+        const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+        const sum = a => a.reduce((s, x) => s + x, 0);
+
+        /* ============ Monthly lifecycle ============ */
+        function summarize(ym, records) {
+            const list = Object.values(records).sort((a, b) => a.date.localeCompare(b.date));
+            const income = sum(list.map(r => r.income)), expense = sum(list.map(r => r.totalExpense));
+            return { month: ym, income, expense, net: income - expense, days: list.length, records: list };
+        }
+        function rollMonth() {
+            const nowYM = monthOf(toISO(new Date()));
+            let active = Store.get('det:active', null);
+            if (!active) active = { month: nowYM, records: {} };
+            if (active.month !== nowYM) {                         // new calendar month began
+                if (Object.keys(active.records).length) {            // archive previous month (only if it had data)
+                    const archive = Store.get('det:archive', {});
+                    archive[active.month] = summarize(active.month, active.records);
+                    Store.set('det:archive', archive);
+                }
+                active = { month: nowYM, records: {} };              // fresh view for the new month
+                state.justReset = true;
+            }
+            Store.set('det:active', active);
+            return active;
+        }
+
+        /* ============ State ============ */
+        const state = { tab: 'track', step: 0, justReset: false, draft: null, active: null };
+        function newDraft(date) {
+            const ex = state.active.records[date];
+            return ex ? { date, income: String(ex.income), expenses: ex.expenses.map(e => ({ name: e.name, price: String(e.price) })), editing: true }
+                : { date, income: '', expenses: [{ name: '', price: '' }], editing: false };
+        }
+        const num = v => { const n = parseFloat(v); return isFinite(n) && n > 0 ? n : 0; };
+        const draftTotals = d => {
+            const income = num(d.income), expense = sum(d.expenses.map(e => num(e.price)));
+            return { income, expense, net: income - expense };
+        };
+
+        /* ============ Views ============ */
+        const card = 'bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-4';
+        const inputCls = 'w-full rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-3 py-3 text-base focus:outline-none focus:ring-2 focus:ring-emerald-500';
+        const btnPrimary = 'w-full rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-semibold py-3 active:scale-[.98] transition';
+        const btnGhost = 'w-full rounded-xl border border-slate-300 dark:border-slate-600 font-medium py-3 active:scale-[.98] transition';
+
+        function viewHome() {
+            const a = state.active, s = summarize(a.month, a.records);
+            const days = s.records.slice().reverse().map(r => `
+    <button data-edit="${r.date}" class="w-full text-left flex justify-between items-center py-3 border-b last:border-0 border-slate-100 dark:border-slate-700">
+      <span><span class="font-medium">${dayLabel(r.date)}</span><br><span class="text-xs text-slate-500">In ${THB(r.income)} · Out ${THB(r.totalExpense)}</span></span>
+      <span class="font-semibold ${r.netBalance < 0 ? 'text-rose-500' : 'text-emerald-500'}">${THB(r.netBalance)}</span>
+    </button>`).join('');
+            return `
+    <header class="pt-6 pb-4"><p class="text-sm text-slate-500">Active month</p><h1 class="text-2xl font-bold">${monthLabel(a.month)}</h1></header>
+    ${state.justReset ? `<div class="mb-4 rounded-xl bg-emerald-50 dark:bg-emerald-900/30 text-emerald-800 dark:text-emerald-200 text-sm p-3">New month started. Last month was archived under History.</div>` : ''}
+    <section class="${card} mb-4">
+      <p class="text-sm text-slate-500">Month balance</p>
+      <p class="text-3xl font-bold ${s.net < 0 ? 'text-rose-500' : 'text-emerald-500'}">${THB(s.net)}</p>
+      <div class="grid grid-cols-2 gap-3 mt-3 text-sm">
+        <div><p class="text-slate-500">Income</p><p class="font-semibold">${THB(s.income)}</p></div>
+        <div><p class="text-slate-500">Expenses</p><p class="font-semibold">${THB(s.expense)}</p></div>
+      </div>
+    </section>
+    <button id="newEntry" class="${btnPrimary} mb-3">+ New daily entry</button>
+    <button id="exportExcel" class="w-full rounded-xl bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 active:scale-[.98] transition mb-4 flex items-center justify-center gap-2">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+      ส่งออก Excel เดือนนี้
+    </button>
+    <section class="${card}"><h2 class="font-semibold mb-1">Days this month</h2>
+      ${days || '<p class="text-sm text-slate-500 py-4 text-center">No entries yet.</p>'}
+    </section>`;
+        }
+
+        function stepper() {
+            const labels = ['Date', 'Income', 'Expenses', 'Summary'];
+            return `<div class="pt-6 pb-4"><div class="flex gap-1.5 mb-2">${labels.map((_, i) => `<div class="h-1.5 flex-1 rounded-full ${i <= state.step - 1 ? 'bg-emerald-500' : 'bg-slate-200 dark:bg-slate-700'}"></div>`).join('')}</div>
+    <p class="text-sm text-slate-500">Step ${state.step} of 4 · ${labels[state.step - 1]}</p></div>`;
+        }
+
+        function viewWizard() {
+            const d = state.draft;
+            let body = '';
+            if (state.step === 1) {
+                const ym = state.active.month, first = ym + '-01';
+                const today = toISO(new Date());
+                body = `<h1 class="text-2xl font-bold mb-1">Select date</h1><p class="text-slate-500 mb-4">Confirm the day you are recording.</p>
+      <input id="date" type="date" class="${inputCls}" value="${d.date}" min="${first}" max="${today}">
+      <p class="text-xs text-slate-500 mt-2">Only dates in ${monthLabel(ym)} (up to today) can be edited.</p>
+      ${state.active.records[d.date] ? '<p class="text-sm text-amber-600 mt-3">An entry already exists for this date. Saving will update it.</p>' : ''}
+      <div class="mt-6 grid grid-cols-2 gap-3"><button data-act="cancel" class="${btnGhost}">Cancel</button><button data-act="next" class="${btnPrimary}">Next</button></div>`;
+            } else if (state.step === 2) {
+                body = `<h1 class="text-2xl font-bold mb-1">Income</h1><p class="text-slate-500 mb-4">Total income for ${dayLabel(d.date)}.</p>
+      <div class="relative"><span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">฿</span>
+      <input id="income" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0.00" class="${inputCls} pl-8 text-xl" value="${esc(d.income)}"></div>
+      <p class="text-xs text-slate-500 mt-2">Leave blank or 0 if you earned nothing.</p>
+      <div class="mt-6 grid grid-cols-2 gap-3"><button data-act="back" class="${btnGhost}">Back</button><button data-act="next" class="${btnPrimary}">Next</button></div>`;
+            } else if (state.step === 3) {
+                const rows = d.expenses.map((e, i) => `
+      <div class="flex gap-2 items-center mb-2">
+        <input data-i="${i}" data-f="name" placeholder="Item name" class="${inputCls} flex-1 min-w-0" value="${esc(e.name)}">
+        <input data-i="${i}" data-f="price" type="number" inputmode="decimal" min="0" step="0.01" placeholder="฿" class="${inputCls} w-28" value="${esc(e.price)}">
+        <button data-rm="${i}" aria-label="Remove" class="text-slate-400 hover:text-rose-500 text-xl px-1">&times;</button>
+      </div>`).join('');
+                body = `<h1 class="text-2xl font-bold mb-1">Expenses</h1><p class="text-slate-500 mb-4">Add every item you spent on.</p>
+      <div id="rows">${rows}</div>
+      <button data-act="add" class="${btnGhost} mt-1">+ Add more</button>
+      <p class="text-right mt-3 text-sm text-slate-500">Subtotal <span id="sub" class="font-semibold text-slate-800 dark:text-slate-100">${THB(draftTotals(d).expense)}</span></p>
+      <div class="mt-6 grid grid-cols-2 gap-3"><button data-act="back" class="${btnGhost}">Back</button><button data-act="next" class="${btnPrimary}">Review</button></div>`;
+            } else {
+                const t = draftTotals(d), items = d.expenses.filter(e => e.name.trim() || num(e.price));
+                body = `<h1 class="text-2xl font-bold mb-4">Daily summary</h1>
+      <div class="${card}">
+        <p class="text-sm text-slate-500">${dayLabel(d.date)}</p>
+        <div class="flex justify-between mt-3"><span>Total income</span><span class="font-semibold text-emerald-500">${THB(t.income)}</span></div>
+        <div class="flex justify-between mt-2"><span>Total expenses</span><span class="font-semibold text-rose-500">${THB(t.expense)}</span></div>
+        <hr class="my-3 border-slate-200 dark:border-slate-700">
+        <div class="flex justify-between text-lg"><span class="font-semibold">Net balance</span><span class="font-bold ${t.net < 0 ? 'text-rose-500' : 'text-emerald-500'}">${THB(t.net)}</span></div>
+      </div>
+      ${items.length ? `<div class="${card} mt-3 text-sm">${items.map(e => `<div class="flex justify-between py-1"><span>${esc(e.name || 'Unnamed')}</span><span>${THB(num(e.price))}</span></div>`).join('')}</div>` : ''}
+      <div class="mt-6 grid grid-cols-2 gap-3"><button data-act="back" class="${btnGhost}">Back</button><button data-act="save" class="${btnPrimary}">Save</button></div>
+      ${d.editing ? `<button data-act="delete" class="w-full mt-3 text-rose-500 text-sm py-2">Delete this entry</button>` : ''}`;
+            }
+            return stepper() + `<div class="${card}">${body}</div>`;
+        }
+
+        function viewHistory() {
+            const archive = Store.get('det:archive', {});
+            const months = Object.values(archive).sort((a, b) => b.month.localeCompare(a.month));
+            const list = months.map(m => `
+    <details class="${card} mb-3">
+      <summary class="cursor-pointer flex justify-between items-center">
+        <span><span class="font-semibold">${monthLabel(m.month)}</span><br><span class="text-xs text-slate-500">${m.days} day${m.days === 1 ? '' : 's'} recorded</span></span>
+        <span class="font-bold ${m.net < 0 ? 'text-rose-500' : 'text-emerald-500'}">${THB(m.net)}</span>
+      </summary>
+      <div class="mt-3 text-sm">
+        <div class="flex justify-between"><span>Income</span><span>${THB(m.income)}</span></div>
+        <div class="flex justify-between mb-2"><span>Expenses</span><span>${THB(m.expense)}</span></div>
+        ${m.records.map(r => `<div class="flex justify-between py-1 border-t border-slate-100 dark:border-slate-700"><span>${dayLabel(r.date)}</span><span class="${r.netBalance < 0 ? 'text-rose-500' : ''}">${THB(r.netBalance)}</span></div>`).join('')}
+        <button data-exportxl="${m.month}" class="mt-3 text-blue-600 text-sm font-medium mr-4">📊 Export Excel</button>
+        <button data-export="${m.month}" class="mt-3 text-emerald-600 text-sm font-medium">Export JSON</button>
+      </div>
+    </details>`).join('');
+            return `<header class="pt-6 pb-4"><h1 class="text-2xl font-bold">History</h1><p class="text-sm text-slate-500">Archived months, saved automatically when a new month begins.</p></header>
+    ${list || `<div class="${card} text-center text-sm text-slate-500 py-8">No archived months yet.</div>`}`;
+        }
+
+        /* ============ Render & events ============ */
+        const app = document.getElementById('app');
+        function render() {
+            app.innerHTML = state.tab === 'history' ? viewHistory() : (state.step ? viewWizard() : viewHome());
+            document.querySelectorAll('.tab').forEach(b => {
+                const on = b.dataset.tab === state.tab;
+                b.classList.toggle('text-emerald-500', on); b.classList.toggle('text-slate-500', !on);
+            });
+        }
+        function startEntry(date) { state.draft = newDraft(date); state.step = 1; state.justReset = false; render(); }
+
+        document.querySelectorAll('.tab').forEach(b => b.addEventListener('click', () => { state.tab = b.dataset.tab; state.step = 0; render(); }));
+
+        app.addEventListener('input', e => {
+            const t = e.target, d = state.draft;
+            if (t.id === 'income') d.income = t.value;
+            else if (t.id === 'date') { if (t.value && monthOf(t.value) === state.active.month) { d.date = t.value; } }
+            else if (t.dataset.i !== undefined) {
+                d.expenses[+t.dataset.i][t.dataset.f] = t.value;
+                const sub = document.getElementById('sub'); if (sub) sub.textContent = THB(draftTotals(d).expense);
+            }
+        });
+        app.addEventListener('change', e => { if (e.target.id === 'date') { const ex = state.active.records[state.draft.date]; if (ex || true) { state.draft = newDraft(e.target.value && monthOf(e.target.value) === state.active.month ? e.target.value : state.draft.date); render(); } } });
+
+        app.addEventListener('click', e => {
+            const t = e.target.closest('button'); if (!t) return;
+            const d = state.draft;
+            if (t.id === 'newEntry') return startEntry(toISO(new Date()));
+            if (t.id === 'exportExcel') return exportToExcel(state.active.month, state.active.records, false);
+            if (t.dataset.edit) return startEntry(t.dataset.edit);
+            if (t.dataset.rm !== undefined) { d.expenses.splice(+t.dataset.rm, 1); if (!d.expenses.length) d.expenses.push({ name: '', price: '' }); return render(); }
+            if (t.dataset.exportxl) { const m = Store.get('det:archive', {})[t.dataset.exportxl]; if (m) exportToExcel(m.month, m.records, true); return; }
+            if (t.dataset.export) { const m = Store.get('det:archive', {})[t.dataset.export]; const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(m, null, 2)], { type: 'application/json' })); a.download = `expenses-${t.dataset.export}.json`; a.click(); return; }
+            switch (t.dataset.act) {
+                case 'cancel': state.step = 0; break;
+                case 'back': state.step--; break;
+                case 'add': d.expenses.push({ name: '', price: '' }); render(); const ins = document.querySelectorAll('[data-f="name"]'); ins[ins.length - 1]?.focus(); return;
+                case 'next':
+                    if (state.step === 1 && !d.date) return alert('Please pick a date.');
+                    state.step++; break;
+                case 'save': saveDraft(); return;
+                case 'delete':
+                    if (confirm('Delete this day\'s entry?')) { delete state.active.records[d.date]; Store.set('det:active', state.active); state.step = 0; }
+                    break;
+            }
+            render();
+        });
+
+        function saveDraft() {
+            const d = state.draft, t = draftTotals(d);
+            const expenses = d.expenses.filter(e => e.name.trim() || num(e.price)).map(e => ({ name: e.name.trim() || 'Unnamed', price: num(e.price) }));
+            state.active.records[d.date] = { date: d.date, income: t.income, expenses, totalExpense: t.expense, netBalance: t.net };
+            Store.set('det:active', state.active);
+            state.step = 0; render();
+        }
+
+        /* ============ Excel Export ============ */
+        function exportToExcel(ym, records, isArchive) {
+            // Gather records as sorted array
+            let recList;
+            if (isArchive) {
+                recList = records; // already an array from archive
+            } else {
+                recList = Object.values(records).sort((a, b) => a.date.localeCompare(b.date));
+            }
+            if (!recList.length) return alert('ไม่มีข้อมูลให้ส่งออก');
+
+            const wb = XLSX.utils.book_new();
+
+            // ── Sheet 1: รายละเอียดรายวัน (Daily Details) ──
+            const detailRows = [];
+            // Header row
+            detailRows.push(['รายงานรายรับ-รายจ่าย ประจำเดือน ' + monthLabel(ym)]);
+            detailRows.push([]); // blank
+            detailRows.push(['วันที่', 'รายการ', 'รายรับ (฿)', 'รายจ่าย (฿)', 'คงเหลือ (฿)']);
+
+            let grandIncome = 0, grandExpense = 0;
+
+            recList.forEach(r => {
+                const dateStr = dayLabel(r.date);
+                // First row for this date: income
+                detailRows.push([dateStr, 'รายได้', r.income, '', '']);
+                grandIncome += r.income;
+
+                // Each expense item
+                if (r.expenses && r.expenses.length) {
+                    r.expenses.forEach(exp => {
+                        detailRows.push(['', exp.name || 'ไม่ระบุชื่อ', '', exp.price, '']);
+                        grandExpense += exp.price;
+                    });
+                }
+                // Net for the day
+                detailRows.push(['', 'รวมสุทธิประจำวัน', '', '', r.netBalance]);
+                detailRows.push([]); // separator
+            });
+
+            // Grand total
+            detailRows.push([]);
+            detailRows.push(['สรุปรวมทั้งเดือน', '', grandIncome, grandExpense, grandIncome - grandExpense]);
+
+            const ws1 = XLSX.utils.aoa_to_sheet(detailRows);
+
+            // Column widths
+            ws1['!cols'] = [
+                { wch: 22 }, // วันที่
+                { wch: 25 }, // รายการ
+                { wch: 15 }, // รายรับ
+                { wch: 15 }, // รายจ่าย
+                { wch: 15 }, // คงเหลือ
+            ];
+
+            // Merge title row across all columns
+            ws1['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 4 } }];
+
+            XLSX.utils.book_append_sheet(wb, ws1, 'รายละเอียด');
+
+            // ── Sheet 2: สรุปรายวัน (Daily Summary) ──
+            const summaryRows = [];
+            summaryRows.push(['สรุปรายรับ-รายจ่าย ประจำเดือน ' + monthLabel(ym)]);
+            summaryRows.push([]);
+            summaryRows.push(['วันที่', 'รายรับ (฿)', 'รายจ่าย (฿)', 'คงเหลือ (฿)']);
+
+            let totalIn = 0, totalOut = 0;
+            recList.forEach(r => {
+                summaryRows.push([r.date, r.income, r.totalExpense, r.netBalance]);
+                totalIn += r.income;
+                totalOut += r.totalExpense;
+            });
+
+            summaryRows.push([]);
+            summaryRows.push(['รวมทั้งเดือน', totalIn, totalOut, totalIn - totalOut]);
+
+            const ws2 = XLSX.utils.aoa_to_sheet(summaryRows);
+            ws2['!cols'] = [
+                { wch: 18 },
+                { wch: 15 },
+                { wch: 15 },
+                { wch: 15 },
+            ];
+            ws2['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 3 } }];
+
+            XLSX.utils.book_append_sheet(wb, ws2, 'สรุปรายวัน');
+
+            // ── Sheet 3: หมวดหมู่รายจ่าย (Expense Categories) ──
+            const catMap = {};
+            recList.forEach(r => {
+                if (r.expenses) r.expenses.forEach(exp => {
+                    const name = exp.name || 'ไม่ระบุชื่อ';
+                    catMap[name] = (catMap[name] || 0) + exp.price;
+                });
+            });
+            const catRows = [];
+            catRows.push(['สรุปรายจ่ายตามหมวดหมู่ ประจำเดือน ' + monthLabel(ym)]);
+            catRows.push([]);
+            catRows.push(['รายการ', 'ยอดรวม (฿)', 'สัดส่วน (%)']);
+            const catEntries = Object.entries(catMap).sort((a, b) => b[1] - a[1]);
+            const catTotal = catEntries.reduce((s, e) => s + e[1], 0);
+            catEntries.forEach(([name, total]) => {
+                catRows.push([name, total, catTotal ? Math.round(total / catTotal * 100) : 0]);
+            });
+            catRows.push([]);
+            catRows.push(['รวมรายจ่ายทั้งหมด', catTotal, '100']);
+
+            const ws3 = XLSX.utils.aoa_to_sheet(catRows);
+            ws3['!cols'] = [
+                { wch: 25 },
+                { wch: 15 },
+                { wch: 12 },
+            ];
+            ws3['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 2 } }];
+
+            XLSX.utils.book_append_sheet(wb, ws3, 'หมวดหมู่รายจ่าย');
+
+            // Download
+            XLSX.writeFile(wb, `รายรับรายจ่าย-${ym}.xlsx`);
+        }
+
+        /* ============ Boot ============ */
+        function boot() { state.active = rollMonth(); render(); }
+        boot();
+        // Re-check month rollover when the app returns to the foreground (e.g. left open past midnight on the 1st)
+        document.addEventListener('visibilitychange', () => { if (!document.hidden && !state.step) boot(); });
+        if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => { });
+    </script>
+</body>
+
+</html>
